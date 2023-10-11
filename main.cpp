@@ -31,33 +31,13 @@ void decryptDES(const std::string& ciphertext, const std::string& key, std::stri
     );
 }
 
-// Función para descifrar un mensaje con DES usando fuerza bruta
-void bruteForceDecryptDES(const std::string& ciphertext) {
-    std::string key(8, ' ');  // DES utiliza una llave de 8 bytes
-    std::string plaintext;
-
-    for (int i = 0; i < 256; i++) {
-        for (int j = 0; j < 256; j++) {
-            // ... (continúa con bucles anidados para cubrir todos los bytes de la llave)
-            key[0] = i;
-            key[1] = j;
-            // ...
-
-            decryptDES(ciphertext, key, plaintext);
-
-            // Aquí puedes verificar si el texto descifrado tiene sentido o usar alguna otra heurística
-            // Por simplicidad, solo mostraré el texto descifrado para cada llave
-            std::cout << "Key: " << key << ", Plaintext: " << plaintext << std::endl;
-        }
-    }
-}
 
 int main() {
     std::string key = "12345678";  // Asegúrate de que la llave tenga 8 caracteres
     std::string plaintext, ciphertext;
 
     // Leer el mensaje desde un archivo
-    std::ifstream file("message.txt");
+    std::ifstream file("texto.txt");
     if (file) {
         plaintext.assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         file.close();
@@ -69,12 +49,21 @@ int main() {
     encryptDES(plaintext, key, ciphertext);
     std::cout << "Texto cifrado: " << ciphertext << std::endl;
 
+    // Guardar el texto cifrado en un archivo
+    std::ofstream outputFile("textoCifrado.txt");
+    if (outputFile) {
+        outputFile << ciphertext;
+        outputFile.close();
+        std::cout << "Texto cifrado guardado en 'textoCifrado.txt'." << std::endl;
+    } else {
+        std::cerr << "Error al guardar el archivo cifrado." << std::endl;
+        return 1;
+    }
+
     std::string decryptedText;
     decryptDES(ciphertext, key, decryptedText);
     std::cout << "Texto descifrado: " << decryptedText << std::endl;
 
-    // Para demostrar la fuerza bruta (esto puede llevar MUCHO tiempo)
-    // bruteForceDecryptDES(ciphertext);
 
     return 0;
 }
