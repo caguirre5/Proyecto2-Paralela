@@ -22,7 +22,7 @@
 using namespace CryptoPP;
 
 // Cifrar un mensaje con DES usando una llave (por ejemplo 42)
-void encriptado(const std::string &plaintext, const stdstring &key, std::string &ciphertext)
+void encriptado(const std::string &plaintext, const std::string &key, std::string &ciphertext)
 {
     DES::Encryption desEncryption((byte *)key.data(), DES::DEFAULT_KEYLENGTH);
     ECB_Mode_ExternalCipher::Encryption ecbEncryption(desEncryption);
@@ -73,14 +73,22 @@ int main(int argc, char *argv[])
     if (mode == "cifrar")
     {
         // Cifrar el txt
-        encryptDES(text, key, processedText); // Encriptar
+        encriptado(text, key, processedText); // Encriptar
         std::cout << "Texto cifrado: " << processedText << std::endl;
+        // Guardar el resultado en un archivo de salida
+        std::ofstream outFile("resultado_cifrado.txt");
+        outFile << ciphertext;
+        outFile.close();
     }
     else if (mode == "descifrar")
     {
         // Descifrar el txt
-        decryptDES(text, key, processedText); // Desencriptar
+        descencriptado(text, key, processedText); // Desencriptar
         std::cout << "Texto descifrado: " << processedText << std::endl;
+        // Guardar el resultado en un archivo de salida
+        std::ofstream outFile("resultado_descifrado.txt");
+        outFile << ciphertext;
+        outFile.close();
     }
     else
     {

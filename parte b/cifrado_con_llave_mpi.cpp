@@ -122,11 +122,11 @@ int main(int argc, char *argv[])
 
         if (mode == "cifrar")
         {
-            encryptDES(myBlock, key, ciphertext);
+            encriptado(myBlock, key, ciphertext);
         }
         else
         {
-            decryptDES(myBlock, key, ciphertext);
+            descencriptado(myBlock, key, ciphertext);
         }
 
         // Recibimos la info de los hilos ya procesada
@@ -141,6 +141,10 @@ int main(int argc, char *argv[])
 
         // Para saber que hace cada proceso :)
         std::cout << "Texto procesado por el proceso " << rank << ": " << ciphertext << std::endl;
+        // Guardar el resultado en un archivo de salida
+        std::ofstream outFile("resultado.txt");
+        outFile << ciphertext;
+        outFile.close();
     }
     else
     {
@@ -155,11 +159,11 @@ int main(int argc, char *argv[])
 
         if (mode == "cifrar")
         {
-            encryptDES(myBlock, key, myCiphertext);
+            encriptado(myBlock, key, myCiphertext);
         }
         else
         {
-            decryptDES(myBlock, key, myCiphertext);
+            descencriptado(myBlock, key, myCiphertext);
         }
 
         // Luego envia al rank 0 la informacion procesada

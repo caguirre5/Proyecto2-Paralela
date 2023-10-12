@@ -140,6 +140,26 @@ int main(int argc, char *argv[])
 
         // Mostrar el texto cifrado
         std::cout << "Texto cifrado: " << ciphertext << std::endl;
+
+        // Mostrar el texto cifrado o descifrado
+        if (mode == "cifrar")
+        {
+            std::cout << "Texto cifrado: " << ciphertext << std::endl;
+
+            // Guardar el resultado cifrado en un archivo de salida
+            std::ofstream outFile("cifrado_alternativa1.txt");
+            outFile << ciphertext;
+            outFile.close();
+        }
+        else if (mode == "descifrar")
+        {
+            std::cout << "Texto descifrado: " << ciphertext << std::endl;
+
+            // Guardar el resultado descifrado en un archivo de salida
+            std::ofstream outFile("descifrado_alternativa1.txt");
+            outFile << ciphertext;
+            outFile.close();
+        }
     }
     else
     {
