@@ -31,9 +31,13 @@ void decryptDES(const std::string& ciphertext, const std::string& key, std::stri
     );
 }
 
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Uso: " << argv[0] << " <clave>" << std::endl;
+        return 1;
+    }
 
-int main() {
-    std::string key = "12345678";  // Asegúrate de que la llave tenga 8 caracteres
+    std::string key = argv[1];
     std::string plaintext, ciphertext;
 
     // Leer el mensaje desde un archivo
@@ -63,7 +67,6 @@ int main() {
     std::string decryptedText;
     decryptDES(ciphertext, key, decryptedText);
     std::cout << "Texto descifrado: " << decryptedText << std::endl;
-
 
     return 0;
 }

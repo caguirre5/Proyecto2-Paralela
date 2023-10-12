@@ -1,1 +1,1 @@
-hello como estas
+En equipos de 3 integrantes, deben utilizar MPI para diseñar un programa que encuentre la llave privada con la que fue cifrado un texto plano. La búsqueda se hará probando todas las posibles combinaciones de llaves, hasta encontrar una que descifra el texto (fuerza bruta). Se sabrá si logro descifrar el texto correctamente validando si el mismo contiene como substring una palabra/frase clave de búsqueda, la cual se sabe a priori 
