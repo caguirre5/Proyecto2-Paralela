@@ -29,7 +29,7 @@ void decryptDES(const std::string& ciphertext, const std::string& key, std::stri
             new StringSink(plaintext)
         )
     );
-    std::cout << "Texto descifrado: " << plaintext << std::endl;
+    
 }
 
 int main(int argc, char* argv[]) {
@@ -39,6 +39,9 @@ int main(int argc, char* argv[]) {
     }
 
     std::string key = argv[1];
+    // Usando length()
+    std::cout << "\nLongitud de la llave: " << key.length() << std::endl;
+
     std::string plaintext, ciphertext;
 
     // Leer el mensaje desde un archivo
@@ -57,7 +60,7 @@ int main(int argc, char* argv[]) {
     if (outputFile) {
         outputFile << ciphertext;
         outputFile.close();
-        std::cout << "Texto cifrado guardado en 'textoCifrado.txt'." << std::endl;
+        std::cout << "\nTexto cifrado guardado en 'textoCifrado.txt'." << std::endl;
     } else {
         std::cerr << "Error al guardar el archivo cifrado." << std::endl;
         return 1;

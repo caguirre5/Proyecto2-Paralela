@@ -1,16 +1,17 @@
 #include <iostream>
 #include <fstream>
-#include <cryptopp/des.h>
-#include <cryptopp/modes.h>
-#include <cryptopp/filters.h>
-#include <cryptopp/hex.h>
+#include <cryptopp/des.h>       //DEpendencia para aplicar DES
+#include <cryptopp/modes.h>     //DEpendencia para aplicar DES
+#include <cryptopp/filters.h>   //DEpendencia para aplicar DES
+#include <cryptopp/hex.h>       //DEpendencia para aplicar DES
 #include <typeinfo>
+#include <chrono> //Dependencia para tomar tiempo
 
 using namespace CryptoPP;
 
 // Función para descifrar un mensaje con DES
 bool tryDecryptDES(const std::string& ciphertext, const std::string& key, std::string& plaintext) {
-    // std::cout << "La llave se encontro." << key << "." << std::endl;
+    
     try {
         DES::Decryption desDecryption((byte*)key.data());
         ECB_Mode_ExternalCipher::Decryption ecbDecryption(desDecryption);
@@ -51,6 +52,8 @@ int main(int argc, char* argv[]) {
     bool keyFound = false;
     std::string foundKey;
     
+    // Iniciar el temporizador
+    auto startTime = std::chrono::high_resolution_clock::now();
 
     for (int candidate = 0; candidate <= std::pow(10, numCaracteresLlave) - 1; candidate++) {
         // Convertir el número de candidato a una cadena de longitud numCaracteresLlave rellenada con ceros
@@ -61,9 +64,8 @@ int main(int argc, char* argv[]) {
 
         if (tryDecryptDES(encryptedText, "" + candidateKey + "", decryptedText)) {
             // Verificar si la palabra clave está presente en el texto desencriptado
-            std::cout << "Funciono con la llave: " << decryptedText.find(keyword) << std::endl;
+            
             if (decryptedText.find(keyword) != std::string::npos) {
-                std::cout << "La llave se encontro." << std::endl;
                 keyFound = true;
                 foundKey = candidateKey;
                 break;
@@ -74,12 +76,19 @@ int main(int argc, char* argv[]) {
         decryptedText.clear();
     }
 
+    // Detener el temporizador
+    auto endTime = std::chrono::high_resolution_clock::now();
+
     if (keyFound) {
-        std::cout << "Llave encontrada: " << foundKey << std::endl;
+        std::cout << "\nLlave encontrada: " << foundKey << std::endl;
         std::cout << "Texto descifrado: " << decryptedText << std::endl;
     } else {
-        std::cout << "La llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
+        std::cout << "\nLa llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
     }
+    
+    // Calcular la duración y mostrarla
+    std::chrono::duration<double> duration = endTime - startTime;
+    std::cout << "\nTiempo tomado para encontrar la llave: " << duration.count() << " segundos" << std::endl;
 
     return 0;
 }

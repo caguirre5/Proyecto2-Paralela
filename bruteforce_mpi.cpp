@@ -4,84 +4,122 @@
 #include <cryptopp/modes.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>
+#include <typeinfo>
+#include <chrono>
 #include <mpi.h>
 
 using namespace CryptoPP;
 
 // Función para descifrar un mensaje con DES
 bool tryDecryptDES(const std::string& ciphertext, const std::string& key, std::string& plaintext) {
-    // Implementa la función tryDecryptDES aquí
-    // ...
-    return false;  // Reemplaza esto con la implementación real
+    try {
+        DES::Decryption desDecryption((byte*)key.data());
+        ECB_Mode_ExternalCipher::Decryption ecbDecryption(desDecryption);
+
+        StringSource decryptor(ciphertext, true,
+            new StreamTransformationFilter(ecbDecryption,
+                new StringSink(plaintext)
+            )
+        );
+
+        return true;
+    } catch (CryptoPP::Exception& e) {
+        return false;
+    }
 }
 
 int main(int argc, char* argv[]) {
-    MPI_Init(&argc, &argv);
-    int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    if (argc != 2) {
-        if (rank == 0) {
-            std::cerr << "Uso: " << argv[0] << " <palabra_clave>" << std::endl;
-        }
-        MPI_Finalize();
+    if (argc != 3) {
+        std::cerr << "Uso: " << argv[0] << " <palabra_clave> <num_caracteres_llave>" << std::endl;
         return 1;
     }
 
-    const std::string keyword = argv[1]; // Obtener la palabra clave desde la línea de comandos
-    const int total_keys = 99999999;
-
-    // Calcular el rango de llaves para este nodo
-    const int keys_per_node = total_keys / size;
-    const int start_key = rank * keys_per_node;
-    const int end_key = (rank == size - 1) ? total_keys : (rank + 1) * keys_per_node;
+    const std::string keyword = argv[1];
+    int numCaracteresLlave = std::stoi(argv[2]);
 
     std::string decryptedText;
 
-    // Leer el texto cifrado desde un archivo (solo el nodo 0 lo hace)
-    std::string encryptedText;
-    if (rank == 0) {
-        std::ifstream encryptedFile("textoCifrado.txt");
-        if (!encryptedFile) {
-            std::cerr << "Error al abrir el archivo cifrado para descifrar." << std::endl;
-            MPI_Finalize();
-            return 1;
-        }
-        encryptedText.assign((std::istreambuf_iterator<char>(encryptedFile)), std::istreambuf_iterator<char>());
+    std::ifstream encryptedFile("textoCifrado.txt");
+    if (!encryptedFile) {
+        std::cerr << "Error al abrir el archivo cifrado para descifrar." << std::endl;
+        return 1;
     }
+
+    std::string encryptedText((std::istreambuf_iterator<char>(encryptedFile)), std::istreambuf_iterator<char>());
+    encryptedFile.close();
+
+    MPI_Init(&argc, &argv);
+
+    int numProcesses;
+    int processId;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+    MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+
+    long long int totalCandidates = std::pow(10, numCaracteresLlave);
+    long long int candidatesPerProcess = totalCandidates / numProcesses;
+    long long int startCandidate = processId * candidatesPerProcess;
+    long long int endCandidate = (processId + 1) * candidatesPerProcess;
 
     bool keyFound = false;
     std::string foundKey;
 
-    for (int candidate = start_key; candidate < end_key && !keyFound; candidate++) {
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    for (int candidate = startCandidate; candidate < endCandidate; candidate++) {
         std::string candidateKey = std::to_string(candidate);
-        while (candidateKey.length() < 8) {
+        // std::cout << candidateKey << std::endl;
+        while (candidateKey.length() < numCaracteresLlave) {
             candidateKey = "0" + candidateKey;
         }
+        
 
-        if (tryDecryptDES(encryptedText, candidateKey, decryptedText)) {
+        if (tryDecryptDES(encryptedText, "" + candidateKey + "", decryptedText)) {
             if (decryptedText.find(keyword) != std::string::npos) {
                 keyFound = true;
                 foundKey = candidateKey;
+                std::cout << "Texto: " << decryptedText << std::endl;
+                break;
             }
         }
+
+        decryptedText.clear();
     }
 
-    // Comunicación entre nodos para detener la búsqueda si se encuentra la clave
-    MPI_Bcast(&keyFound, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+    auto endTime = std::chrono::high_resolution_clock::now();
 
     if (keyFound) {
-        if (rank == 0) {
-            std::cout << "Llave encontrada: " << foundKey << std::endl;
-            std::cout << "Texto descifrado: " << decryptedText << std::endl;
-        }
+        std::cout << "Proceso " << processId << " encontró la llave: " << foundKey << std::endl;
+        MPI_Send(foundKey.c_str(), foundKey.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
     } else {
-        if (rank == 0) {
-            std::cout << "La llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
+        MPI_Send(nullptr, 0, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
+    }
+
+    if (processId == 0) {
+        std::string finalFoundKey;
+        bool anyKeyFound = false;
+
+        for (int i = 0; i < numProcesses; i++) {
+            char receivedKey[256];
+            MPI_Recv(receivedKey, sizeof(receivedKey), MPI_CHAR, i, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            if (receivedKey[0] != '\0') {
+                finalFoundKey = std::string(receivedKey);
+                anyKeyFound = true;
+            }
         }
+
+        if (anyKeyFound) {
+            std::cout << "\nLlave encontrada: " << finalFoundKey << std::endl;
+        } else {
+            std::cout << "\nLa llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
+        }
+
+        std::chrono::duration<double> duration = endTime - startTime;
+        std::cout << "\nTiempo tomado para encontrar la llave: " << duration.count() << " segundos" << std::endl;
     }
 
     MPI_Finalize();
+
     return 0;
 }
