@@ -37,16 +37,17 @@ bool tryDecryptDES(const std::string& ciphertext, const std::string& key, std::s
     }
 }
 
-bool binarySearch(const std::string& ciphertext, const std::string& keyword, int numCaracteresLlave, long long startCandidate, long long endCandidate, std::string& foundKey) {
-    std::string decryptedText;
+bool binarySearch(const std::string& ciphertext, const std::string& keyword, int numCaracteresLlave, long long startCandidate, long long endCandidate, std::string& foundKey, int processId) {    std::string decryptedText;
+    int keysEvaluated = 0;  // Inicializa un contador de claves evaluadas a 0
 
     for (long long candidate = startCandidate; candidate < endCandidate; candidate++) {
         std::string candidateKey = std::to_string(candidate);
         while (candidateKey.length() < numCaracteresLlave) {
             candidateKey = "0" + candidateKey;
-        }
-
+        }  
+        
         if (tryDecryptDES(ciphertext, candidateKey, decryptedText)) {
+            keysEvaluated++;  // Incrementa el contador de claves evaluadas
             if (decryptedText.find(keyword) != std::string::npos) {
                 foundKey = candidateKey;
                 return true;
@@ -56,8 +57,10 @@ bool binarySearch(const std::string& ciphertext, const std::string& keyword, int
         decryptedText.clear();
     }
 
+    std::cout << "Proceso " << processId << " evaluó " << keysEvaluated << " claves." << std::endl;  // Imprime el número de claves evaluadas en este proceso
     return false;
 }
+
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -66,11 +69,11 @@ int main(int argc, char* argv[]) {
     }
 
     const std::string keyword = argv[1];
-    int numCaracteresLlave = std::stoi(argv[2);
+    int numCaracteresLlave = std::stoi(argv[2]);
 
     std::string decryptedText;
 
-    std::ifstream encryptedFile("textoCifrado.txt");
+    std::ifstream encryptedFile("textoCifrado_alt1.txt");
     if (!encryptedFile) {
         std::cerr << "Error al abrir el archivo cifrado para descifrar." << std::endl;
         return 1;
@@ -98,11 +101,13 @@ int main(int argc, char* argv[]) {
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    if (binarySearch(encryptedText, keyword, numCaracteresLlave, startCandidate, endCandidate, foundKey)) {
+    if (binarySearch(encryptedText, keyword, numCaracteresLlave, startCandidate, endCandidate, foundKey, processId)) {
         keyFound = true;
     }
 
+
     auto endTime = std::chrono::high_resolution_clock::now();
+    
 
     if (keyFound) {
         std::cout << "Proceso " << processId << " encontró la llave: " << foundKey << std::endl;
