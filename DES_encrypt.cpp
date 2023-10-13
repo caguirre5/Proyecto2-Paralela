@@ -29,6 +29,7 @@ void decryptDES(const std::string& ciphertext, const std::string& key, std::stri
             new StringSink(plaintext)
         )
     );
+    std::cout << "Texto descifrado: " << plaintext << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -51,8 +52,6 @@ int main(int argc, char* argv[]) {
     }
 
     encryptDES(plaintext, key, ciphertext);
-    std::cout << "Texto cifrado: " << ciphertext << std::endl;
-
     // Guardar el texto cifrado en un archivo
     std::ofstream outputFile("textoCifrado.txt");
     if (outputFile) {

@@ -58,7 +58,7 @@ Compila el programa: Abre una terminal en el directorio donde se encuentra el c√
 
 Ejecuta el programa:
 
-**./programa '<palabra_clave>'**
+**./programa '<palabra_clave>' <numero de caracteres de la llave>**
 
 *NOTA: el parametro debe estar entre comillas ya que es un string que puede ser una palabra o bien una frase*
 

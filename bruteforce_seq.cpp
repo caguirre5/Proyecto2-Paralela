@@ -4,11 +4,13 @@
 #include <cryptopp/modes.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>
+#include <typeinfo>
 
 using namespace CryptoPP;
 
 // Función para descifrar un mensaje con DES
 bool tryDecryptDES(const std::string& ciphertext, const std::string& key, std::string& plaintext) {
+    // std::cout << "La llave se encontro." << key << "." << std::endl;
     try {
         DES::Decryption desDecryption((byte*)key.data());
         ECB_Mode_ExternalCipher::Decryption ecbDecryption(desDecryption);
@@ -26,12 +28,13 @@ bool tryDecryptDES(const std::string& ciphertext, const std::string& key, std::s
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Uso: " << argv[0] << " <palabra_clave>" << std::endl;
+    if (argc != 3) {
+        std::cerr << "Uso: " << argv[0] << " <palabra_clave> <num_caracteres_llave>" << std::endl;
         return 1;
     }
 
     const std::string keyword = argv[1]; // Obtener la palabra clave desde la línea de comandos
+    int numCaracteresLlave = std::stoi(argv[2]); // Convertir el número de caracteres de la llave en entero
 
     std::string decryptedText;
 
@@ -47,17 +50,20 @@ int main(int argc, char* argv[]) {
 
     bool keyFound = false;
     std::string foundKey;
+    
 
-    for (int candidate = 0; candidate <= 99999999; candidate++) {
-        // Convertir el número de candidato a una cadena de 8 dígitos
+    for (int candidate = 0; candidate <= std::pow(10, numCaracteresLlave) - 1; candidate++) {
+        // Convertir el número de candidato a una cadena de longitud numCaracteresLlave rellenada con ceros
         std::string candidateKey = std::to_string(candidate);
-        while (candidateKey.length() < 8) {
+        while (candidateKey.length() < numCaracteresLlave) {
             candidateKey = "0" + candidateKey;
         }
 
-        if (tryDecryptDES(encryptedText, candidateKey, decryptedText)) {
+        if (tryDecryptDES(encryptedText, "" + candidateKey + "", decryptedText)) {
             // Verificar si la palabra clave está presente en el texto desencriptado
+            std::cout << "Funciono con la llave: " << decryptedText.find(keyword) << std::endl;
             if (decryptedText.find(keyword) != std::string::npos) {
+                std::cout << "La llave se encontro." << std::endl;
                 keyFound = true;
                 foundKey = candidateKey;
                 break;

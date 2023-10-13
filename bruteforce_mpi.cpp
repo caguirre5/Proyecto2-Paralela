@@ -4,73 +4,84 @@
 #include <cryptopp/modes.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>
+#include <mpi.h>
 
 using namespace CryptoPP;
 
-const std::string keyword = "combinaciones";  // La palabra clave a buscar en el texto desencriptado
-
-
-
 // Función para descifrar un mensaje con DES
 bool tryDecryptDES(const std::string& ciphertext, const std::string& key, std::string& plaintext) {
-    try {
-        DES::Decryption desDecryption((byte*)key.data());
-        ECB_Mode_ExternalCipher::Decryption ecbDecryption(desDecryption);
-
-        StringSource decryptor(ciphertext, true,
-            new StreamTransformationFilter(ecbDecryption,
-                new StringSink(plaintext)
-            )
-        );
-
-        return true;
-    } catch (CryptoPP::Exception& e) {
-        return false;
-    }
+    // Implementa la función tryDecryptDES aquí
+    // ...
+    return false;  // Reemplaza esto con la implementación real
 }
 
-int main() {
-    std::string decryptedText;
+int main(int argc, char* argv[]) {
+    MPI_Init(&argc, &argv);
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Leer el texto cifrado desde un archivo
-    std::ifstream encryptedFile("textoCifrado.txt");
-    if (!encryptedFile) {
-        std::cerr << "Error al abrir el archivo cifrado para descifrar." << std::endl;
+    if (argc != 2) {
+        if (rank == 0) {
+            std::cerr << "Uso: " << argv[0] << " <palabra_clave>" << std::endl;
+        }
+        MPI_Finalize();
         return 1;
     }
 
-    std::string encryptedText((std::istreambuf_iterator<char>(encryptedFile)), std::istreambuf_iterator<char>());
-    encryptedFile.close();
+    const std::string keyword = argv[1]; // Obtener la palabra clave desde la línea de comandos
+    const int total_keys = 99999999;
+
+    // Calcular el rango de llaves para este nodo
+    const int keys_per_node = total_keys / size;
+    const int start_key = rank * keys_per_node;
+    const int end_key = (rank == size - 1) ? total_keys : (rank + 1) * keys_per_node;
+
+    std::string decryptedText;
+
+    // Leer el texto cifrado desde un archivo (solo el nodo 0 lo hace)
+    std::string encryptedText;
+    if (rank == 0) {
+        std::ifstream encryptedFile("textoCifrado.txt");
+        if (!encryptedFile) {
+            std::cerr << "Error al abrir el archivo cifrado para descifrar." << std::endl;
+            MPI_Finalize();
+            return 1;
+        }
+        encryptedText.assign((std::istreambuf_iterator<char>(encryptedFile)), std::istreambuf_iterator<char>());
+    }
 
     bool keyFound = false;
     std::string foundKey;
 
-    for (int candidate = 0; candidate <= 99999999; candidate++) {
-        // Convertir el número de candidato a una cadena de 8 dígitos
+    for (int candidate = start_key; candidate < end_key && !keyFound; candidate++) {
         std::string candidateKey = std::to_string(candidate);
         while (candidateKey.length() < 8) {
             candidateKey = "0" + candidateKey;
         }
 
         if (tryDecryptDES(encryptedText, candidateKey, decryptedText)) {
-            // Verificar si la palabra clave está presente en el texto desencriptado
             if (decryptedText.find(keyword) != std::string::npos) {
                 keyFound = true;
                 foundKey = candidateKey;
-                break;
             }
         }
-
-        // Restablecer decryptedText para el próximo intento
-        decryptedText.clear();
     }
+
+    // Comunicación entre nodos para detener la búsqueda si se encuentra la clave
+    MPI_Bcast(&keyFound, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
 
     if (keyFound) {
-        std::cout << "Llave encontrada: " << foundKey << std::endl;
-        std::cout << "Texto descifrado: " << decryptedText << std::endl;
+        if (rank == 0) {
+            std::cout << "Llave encontrada: " << foundKey << std::endl;
+            std::cout << "Texto descifrado: " << decryptedText << std::endl;
+        }
     } else {
-        std::cout << "La llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
+        if (rank == 0) {
+            std::cout << "La llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
+        }
     }
 
+    MPI_Finalize();
     return 0;
 }
