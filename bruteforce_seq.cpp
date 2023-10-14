@@ -1,3 +1,13 @@
+/**
+ *
+ * authors:
+ *  - Marco Jurado
+ *  - Cristian Aguirre
+ *  - Paola de Leon
+
+*/
+
+
 #include <iostream>
 #include <fstream>
 #include <cryptopp/des.h>       //DEpendencia para aplicar DES
@@ -13,9 +23,11 @@ using namespace CryptoPP;
 bool tryDecryptDES(const std::string& ciphertext, const std::string& key, std::string& plaintext) {
     
     try {
+        // Configurar el objeto de descifrado DES
         DES::Decryption desDecryption((byte*)key.data());
         ECB_Mode_ExternalCipher::Decryption ecbDecryption(desDecryption);
 
+        // Realizar la operación de descifrado y almacenar el resultado en plaintext
         StringSource decryptor(ciphertext, true,
             new StreamTransformationFilter(ecbDecryption,
                 new StringSink(plaintext)

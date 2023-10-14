@@ -1,3 +1,12 @@
+/**
+ *
+ * authors:
+ *  - Marco Jurado
+ *  - Cristian Aguirre
+ *  - Paola de Leon
+
+*/
+
 #include <iostream>
 #include <fstream>
 #include <cryptopp/des.h>
