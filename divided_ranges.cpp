@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <random>
 
 using namespace CryptoPP;
 
@@ -50,6 +51,7 @@ int main(int argc, char* argv[]) {
     std::string encryptedText((std::istreambuf_iterator<char>(encryptedFile)), std::istreambuf_iterator<char>());
     encryptedFile.close();
 
+    // Inicialización de MPI
     MPI_Init(&argc, &argv);
 
     int numProcesses;
@@ -59,16 +61,39 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
 
     long long int totalCandidates = std::pow(10, numCaracteresLlave);
-    long long int candidatesPerProcess = (totalCandidates + numProcesses - 1) / numProcesses;
-    long long int startCandidate = processId * candidatesPerProcess;
-    long long int endCandidate = std::min(startCandidate + candidatesPerProcess, totalCandidates);
+
+    // Crear una lista de rangos ordenados de forma aleatoria
+    std::vector<long long> ranges(numProcesses);
+
+    if (processId == 0) {
+        long long int chunkrange = totalCandidates / numProcesses;
+
+        for (int i = 0; i < numProcesses; i++) {
+            ranges[i] = i * chunkrange;
+        }
+
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(ranges.begin(), ranges.end(), g);
+    }
+
+    // Difundir los rangos a todos los procesos
+    MPI_Bcast(ranges.data(), numProcesses, MPI_LONG_LONG_INT, 0, MPI_COMM_WORLD);
+
+    // Calcular los rangos para cada proceso
+    long long int startCandidate = ranges[processId];
+    long long int endCandidate = ranges[(processId + 1) % numProcesses];
 
     bool keyFound = false;
     std::string foundKey;
 
     auto startTime = std::chrono::high_resolution_clock::now();
+    auto endTime = std::chrono::high_resolution_clock::now();
 
-    for (int candidate = startCandidate; candidate < endCandidate; candidate++) {
+    // Imprimir el rango
+    std::cout << "Proceso " << processId << " trabajando en el rango: [" << startCandidate << ", " << endCandidate << "]" << std::endl;
+
+    for (long long candidate = startCandidate; candidate < endCandidate; candidate++) {
         std::string candidateKey = std::to_string(candidate);
         while (candidateKey.length() < numCaracteresLlave) {
             candidateKey = "0" + candidateKey;
@@ -77,6 +102,7 @@ int main(int argc, char* argv[]) {
         if (tryDecryptDES(encryptedText, candidateKey, decryptedText)) {
             if (decryptedText.find(keyword) != std::string::npos) {
                 keyFound = true;
+                endTime = std::chrono::high_resolution_clock::now();
                 foundKey = candidateKey;
                 std::cout << "Texto: " << decryptedText << std::endl;
                 break;
@@ -85,8 +111,6 @@ int main(int argc, char* argv[]) {
 
         decryptedText.clear();
     }
-
-    auto endTime = std::chrono::high_resolution_clock::now();
 
     if (keyFound) {
         std::cout << "Proceso " << processId << " encontró la llave: " << foundKey << std::endl;
@@ -116,7 +140,6 @@ int main(int argc, char* argv[]) {
         } else {
             std::cout << "\nLa llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
         }
-
     }
 
     MPI_Finalize();
