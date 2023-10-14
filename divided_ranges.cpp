@@ -80,9 +80,14 @@ int main(int argc, char* argv[]) {
     // Difundir los rangos a todos los procesos
     MPI_Bcast(ranges.data(), numProcesses, MPI_LONG_LONG_INT, 0, MPI_COMM_WORLD);
 
-    // Calcular los rangos para cada proceso
-    long long int startCandidate = ranges[processId];
-    long long int endCandidate = ranges[(processId + 1) % numProcesses];
+    long long int chunkrange = totalCandidates / numProcesses;
+    long long int startCandidate = processId * chunkrange;
+    long long int endCandidate = (processId + 1) * chunkrange;
+
+    if (processId == numProcesses - 1) {
+        endCandidate = totalCandidates;
+    }
+
 
     bool keyFound = false;
     std::string foundKey;
