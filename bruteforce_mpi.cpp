@@ -66,19 +66,22 @@ int main(int argc, char* argv[]) {
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
+    std::cout << "Proceso " << processId << " evalúa rango de valores: " << startCandidate << " - " << endCandidate - 1 << std::endl;
+
     for (int candidate = startCandidate; candidate < endCandidate; candidate++) {
         std::string candidateKey = std::to_string(candidate);
-        // std::cout << candidateKey << std::endl;
         while (candidateKey.length() < numCaracteresLlave) {
             candidateKey = "0" + candidateKey;
         }
-        
 
-        if (tryDecryptDES(encryptedText, "" + candidateKey + "", decryptedText)) {
+        if (tryDecryptDES(encryptedText, candidateKey, decryptedText)) {
             if (decryptedText.find(keyword) != std::string::npos) {
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> duration = endTime - startTime;
                 keyFound = true;
                 foundKey = candidateKey;
-                std::cout << "Texto: " << decryptedText << std::endl;
+                std::cout << "Proceso " << processId << " encontró la llave: " << foundKey << std::endl;
+                std::cout << "Tiempo tomado por el proceso " << processId << ": " << duration.count() << " segundos" << std::endl;
                 break;
             }
         }
@@ -86,14 +89,12 @@ int main(int argc, char* argv[]) {
         decryptedText.clear();
     }
 
-    auto endTime = std::chrono::high_resolution_clock::now();
-
     if (keyFound) {
-        std::cout << "Proceso " << processId << " encontró la llave: " << foundKey << std::endl;
         MPI_Send(foundKey.c_str(), foundKey.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
     } else {
         MPI_Send(nullptr, 0, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
     }
+
 
     if (processId == 0) {
         std::string finalFoundKey;
@@ -112,11 +113,8 @@ int main(int argc, char* argv[]) {
         if (anyKeyFound) {
             std::cout << "\nLlave encontrada: " << finalFoundKey << std::endl;
         } else {
-            std::cout << "\nLa llave no se encontró o la palabra clave no está en el texto descifrado." << std::endl;
+            std::cout << "No " << "se" << " encontró la llave " << "" << std::endl;
         }
-
-        std::chrono::duration<double> duration = endTime - startTime;
-        std::cout << "\nTiempo tomado para encontrar la llave: " << duration.count() << " segundos" << std::endl;
     }
 
     MPI_Finalize();
