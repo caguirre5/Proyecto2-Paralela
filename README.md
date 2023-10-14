@@ -65,3 +65,13 @@ Ejecuta el programa:
 ### Resultado
 
 El programa mostrará la clave encontrada y el texto descifrado si la palabra clave se encuentra en el mensaje descifrado. En caso contrario, informará que la clave no se encontró o que la palabra clave no está en el texto descifrado.
+
+# **bruteforce_mpi.cpp**
+
+Compila el programa: Abre una terminal en el directorio donde se encuentra el código fuente y ejecuta el siguiente comando para compilar el programa:
+
+**mpicxx -o decrypt_mpi bruteforce_mpi.cpp -lcryptopp**
+
+Ejecuta el programa:
+
+**mpirun -np 4 ./decrypt_mpi '<palabra_clave>' <numero de caracteres de la llave>**
