@@ -110,7 +110,9 @@ int main(int argc, char* argv[]) {
     
 
     if (keyFound) {
-        std::cout << "Proceso " << processId << " encontró la llave: " << foundKey << std::endl;
+        std::cout << "Proceso " << processId << " muestra la llave: " << foundKey << std::endl;
+        std::chrono::duration<double> duration = endTime - startTime;
+        std::cout << "\nTiempo tomado para encontrar la llave: " << duration.count() << " segundos" << std::endl;
         MPI_Send(foundKey.c_str(), foundKey.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
     } else {
         MPI_Send(nullptr, 0, MPI_CHAR, 0, 1, MPI_COMM_WORLD);

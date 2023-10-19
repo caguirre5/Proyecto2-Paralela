@@ -69,11 +69,11 @@ int main(int argc, char* argv[]) {
     // Cifrar el mensaje
     encryptDES(plaintext, key, ciphertext);
     // Guardar el texto cifrado en un archivo
-    std::ofstream outputFile("textoCifrado.txt");
+    std::ofstream outputFile("textoCifrado_alt1.txt");
     if (outputFile) {
         outputFile << ciphertext;
         outputFile.close();
-        std::cout << "\nTexto cifrado guardado en 'textoCifrado.txt'." << std::endl;
+        std::cout << "\nTexto cifrado guardado en 'textoCifrado_alt1.txt'." << std::endl;
     } else {
         std::cerr << "Error al guardar el archivo cifrado." << std::endl;
         return 1;
